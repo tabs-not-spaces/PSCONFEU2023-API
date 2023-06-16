@@ -7,7 +7,7 @@ param($Request, $TriggerMetadata)
 Write-Host "PowerShell HTTP trigger function processed a request."
 
 #region DEFAULT
-# Interact with query parameters or the body of the request.
+Interact with query parameters or the body of the request.
 $name = $Request.Query.Name
 if (-not $name) {
     $name = $Request.Body.Name
@@ -25,6 +25,26 @@ if ($name) {
 #     Request = $Request
 #     TriggerMetadata = $TriggerMetadata
 # } | ConvertTo-Json -Depth 20
+#endregion
+
+#region PARSE REQUEST METHOD
+# $body = switch ($Request.METHOD) {
+#     "GET" {
+#         "GET 🍻"
+#     }
+#     "POST" {
+#         "POST 📨"
+#     }
+#     "PUT" {
+#         "PUT 🩹"
+#     }
+#     "DELETE" {
+#         "DELETE 🗑️"
+#     }
+#     default {
+#         "UNKNOWN 🤷"
+#     }
+# }
 #endregion
 
 # Associate values to output bindings by calling 'Push-OutputBinding'.
