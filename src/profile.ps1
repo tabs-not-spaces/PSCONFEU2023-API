@@ -20,8 +20,31 @@ if ($env:MSI_SECRET) {
 # Enable-AzureRmAlias
 
 # You can also define functions or aliases that can be referenced in any of your PowerShell functions.
+#region class
+class TodoTask {
+    [string]$task
+    [bool]$completed
 
-# #region AzStorageTableEntity https://github.com/AndrevdG/AzStorageTableEntity
+    TodoTask([string]$task, [bool]$completed) {
+        $this.task = $task
+        $this.completed = $completed
+    }
+}
+class TodoTableEntity {
+    [string]$PartitionKey
+    [string]$RowKey
+    [string]$Timestamp
+    [todoTask]$property
+
+    TodoTableEntity([PSCustomObject]$object) {
+        $this.PartitionKey = $object.PartitionKey
+        $this.RowKey = $object.RowKey
+        $this.Timestamp = $object.Timestamp
+        $this.property = [TodoTask]::New($object.Task, $object.Completed)
+    }
+}
+#endregion
+#region AzStorageTableEntity https://github.com/AndrevdG/AzStorageTableEntity
 function _signHMACSHA256 {
     [CmdletBinding()]
     Param (
@@ -454,4 +477,4 @@ function Get-StorageTableRow {
         return (_processResult -result $result -filterString $filterString)
     }
 }
-# #endregion
+#endregion
