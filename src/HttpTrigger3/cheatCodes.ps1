@@ -1,61 +1,64 @@
+#region cheat codes
 switch ($Request.Method) {
-        'GET' {
-            $body = Get-StorageTableRow -table $table -partitionKey 'todo' -rowKey $Request.Params.id
-            if ($body.value.count -lt 1) {
-                $body = $null
-                $statusCode = [HttpStatusCode]::NotFound
-            }
-            else {
-                $statusCode = [HttpStatusCode]::OK
-            }    
+    'GET' {
+        [TodoTableEntity]$body = (Get-StorageTableRow -table $table -partitionKey 'todo' -rowKey $Request.Params.id).Value[0]
+        if ($body.count -lt 1) {
+            $body = $null
+            $statusCode = [HttpStatusCode]::NotFound
         }
-        'POST' {
-            $existingItem = $body = Get-StorageTableRow -table $table -partitionKey 'todo' -rowKey $Request.Params.id
-            if ($existingItem.value) {
-                $updateParams = @{
-                    table        = $table
-                    partitionKey = 'todo'
-                    rowKey       = $Request.Params.id
-                    property     = @{ 
-                        Task  = $ExistingItem.Value.Task
-                        State = !$existingItem.Value.State
-                    }
-                }
-                $body = Update-StorageTableRow @updateParams
-                $statusCode = [HttpStatusCode]::OK
-            }
-            else {
-                $statusCode = [HttpStatusCode]::NotFound
-            }
-        }
-            
-        'PUT' {
-            $existingItem = $body = Get-StorageTableRow -table $table -partitionKey 'todo' -rowKey $Request.Params.id
-            if ($existingItem.value) {
-                $updateParams = @{
-                    table        = $table
-                    partitionKey = 'todo'
-                    rowKey       = $Request.Params.id
-                    property     = @{ 
-                        Task  = $Request.Body.Task
-                        State = $existingItem.Value.State
-                    }
-                }
-                $body = Update-StorageTableRow @updateParams
-                $statusCode = [HttpStatusCode]::OK
-            }
-            else {
-                $statusCode = [HttpStatusCode]::NotFound
-            }
-        }
-        'DELETE' {
-            $deleteParams = @{
+        else {
+            $statusCode = [HttpStatusCode]::OK
+        }    
+    }
+    'POST' {
+        [TodoTableEntity]$existingItem = (Get-StorageTableRow -table $table -partitionKey 'todo' -rowKey $Request.Params.id).Value[0]
+        if ($existingItem) {
+            $existingItem.property.Completed = !$existingItem.property.Completed
+            $updateParams = @{
                 table        = $table
                 partitionKey = 'todo'
                 rowKey       = $Request.Params.id
+                property     = @{
+                    Task        = $existingItem.property.Task
+                    Completed   = $existingItem.property.Completed
+                }
             }
-            $body = Remove-StorageTableRow @deleteParams
-            $statusCode = [HttpStatusCode]::NoContent
+            $postResult = Update-StorageTableRow @updateParams
+            $body = $existingItem
+            $statusCode = [HttpStatusCode]::OK
         }
-        default {}
+        else {
+            $statusCode = [HttpStatusCode]::NotFound
+        }
     }
+            
+    'PUT' {
+        [TodoTableEntity]$existingItem = (Get-StorageTableRow -table $table -partitionKey 'todo' -rowKey $Request.Params.id).Value[0]
+        if ($existingItem) {
+            $existingItem.property.Task = $Request.Body.Task
+            $updateParams = @{
+                table        = $table
+                partitionKey = 'todo'
+                rowKey       = $Request.Params.id
+                property     = @{
+                    Task        = $existingItem.property.Task
+                    Completed   = $existingItem.property.Completed
+                }
+            }
+            $postResult = Update-StorageTableRow @updateParams
+            $body = $existingItem
+            $statusCode = [HttpStatusCode]::OK
+        }
+    }
+    'DELETE' {
+        $deleteParams = @{
+            table        = $table
+            partitionKey = 'todo'
+            rowKey       = $Request.Params.id
+        }
+        $body = Remove-StorageTableRow @deleteParams
+        $statusCode = [HttpStatusCode]::NoContent
+    }
+    default {}
+}
+#endregion
