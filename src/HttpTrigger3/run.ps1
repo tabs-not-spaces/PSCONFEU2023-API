@@ -20,18 +20,65 @@ Write-Host "PowerShell HTTP trigger function processed a request."
 
 switch ($Request.Method) {
     'GET' {
-        #Get item with correct ID
+        [TodoTableEntity]$body = (Get-StorageTableRow -table $table -partitionKey 'todo' -rowKey $Request.Params.id).Value[0]
+        if ($body.count -lt 1) {
+            $body = $null
+            $statusCode = [HttpStatusCode]::NotFound
+        }
+        else {
+            $statusCode = [HttpStatusCode]::OK
+        }    
     }
     'POST' {
-        #Update state of item with correct ID
+        [TodoTableEntity]$existingItem = (Get-StorageTableRow -table $table -partitionKey 'todo' -rowKey $Request.Params.id).Value[0]
+        if ($existingItem) {
+            $existingItem.property.Completed = !$existingItem.property.Completed
+            $updateParams = @{
+                table        = $table
+                partitionKey = 'todo'
+                rowKey       = $Request.Params.id
+                property     = @{
+                    Task        = $existingItem.property.Task
+                    Completed   = $existingItem.property.Completed
+                }
+            }
+            $postResult = Update-StorageTableRow @updateParams
+            $body = $existingItem
+            $statusCode = [HttpStatusCode]::OK
+        }
+        else {
+            $statusCode = [HttpStatusCode]::NotFound
+        }
     }
+            
     'PUT' {
-        #Update item task value with correct ID
+        [TodoTableEntity]$existingItem = (Get-StorageTableRow -table $table -partitionKey 'todo' -rowKey $Request.Params.id).Value[0]
+        if ($existingItem) {
+            $existingItem.property.Task = $Request.Body.Task
+            $updateParams = @{
+                table        = $table
+                partitionKey = 'todo'
+                rowKey       = $Request.Params.id
+                property     = @{
+                    Task        = $existingItem.property.Task
+                    Completed   = $existingItem.property.Completed
+                }
+            }
+            $postResult = Update-StorageTableRow @updateParams
+            $body = $existingItem
+            $statusCode = [HttpStatusCode]::OK
+        }
     }
     'DELETE' {
-        #Delete item with correct ID
+        $deleteParams = @{
+            table        = $table
+            partitionKey = 'todo'
+            rowKey       = $Request.Params.id
+        }
+        $body = Remove-StorageTableRow @deleteParams
+        $statusCode = [HttpStatusCode]::NoContent
     }
-    Default {}
+    default {}
 }
 
 # Associate values to output bindings by calling 'Push-OutputBinding'.
